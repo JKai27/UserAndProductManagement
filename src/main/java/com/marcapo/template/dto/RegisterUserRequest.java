@@ -15,11 +15,10 @@ public class RegisterUserRequest {
     @NotNull
     private String username;
 
-    @NotNull
+
     @ValidPassword
     private String password;
 
     @Indexed(unique = true)
-    @NotNull
     private String email;
 }

@@ -10,14 +10,19 @@ public class PasswordValidator implements ConstraintValidator<ValidPassword, Str
 
     private static final String PASSWORD_PATTERN =
             "^(?!.*[\\s%$§°^;`\"#€~])(?!.*\\bUSERNAME\\b)(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@!%*?&])[A-Za-z\\d@!%*?&]{6,}$";
+
     @Override
     public boolean isValid(String password, ConstraintValidatorContext context) {
         logger.info("PasswordValidator is being executed for password: {}", password);
 
-        // ✅ Allow null values (only validate if newPassword is provided)
-        if (password == null || password.isEmpty()) {
-            logger.warn("Skipping password validation because it is null or empty");
-            return true;  // ✅ Allow null passwords (for PATCH requests)
+        if (password == null || password.trim().isEmpty()) {
+            logger.error("Password validation failed: Password is null or empty");
+
+            context.disableDefaultConstraintViolation();
+            context.buildConstraintViolationWithTemplate("Password cannot be empty.")
+                    .addConstraintViolation();
+
+            return false;
         }
 
         boolean matchesPattern = password.matches(PASSWORD_PATTERN);

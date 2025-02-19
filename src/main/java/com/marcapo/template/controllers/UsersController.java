@@ -3,11 +3,12 @@ package com.marcapo.template.controllers;
 import com.marcapo.template.documents.User;
 import com.marcapo.template.dto.RegisterUserRequest;
 import com.marcapo.template.dto.UserUpdateRequest;
+import com.marcapo.template.exceptions.EmailORUsernameCanNotBeEmptyException;
+import com.marcapo.template.exceptions.InvalidEmailFormatException;
 import com.marcapo.template.repository.UserRepository;
-import com.marcapo.template.service.InvalidPasswordException;
-import com.marcapo.template.service.UserNotFoundException;
+import com.marcapo.template.exceptions.InvalidPasswordException;
+import com.marcapo.template.exceptions.UserNotFoundException;
 import com.marcapo.template.service.UserService;
-import com.marcapo.template.service.ValidPassword;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +39,7 @@ public class UsersController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createUser(@Valid @RequestBody RegisterUserRequest request, BindingResult result) throws InvalidPasswordException {
+    public ResponseEntity<?> createUser(@Valid @RequestBody RegisterUserRequest request, BindingResult result) throws InvalidPasswordException, EmailORUsernameCanNotBeEmptyException, UserNotFoundException {
         if (result.hasErrors()) {
             Map<String, String> errors = new HashMap<>();
             result.getFieldErrors().forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
@@ -52,7 +53,7 @@ public class UsersController {
     @PatchMapping("/{id}")
     public ResponseEntity<User> editUser(
             @PathVariable String id,
-            @Valid @RequestBody UserUpdateRequest request) throws UserNotFoundException, InvalidPasswordException {
+            @Valid @RequestBody UserUpdateRequest request) throws UserNotFoundException, InvalidPasswordException, InvalidEmailFormatException {
 
         logger.info("PATCH request received for user update: ID = {}", id);
         logger.info("Received payload: {}", request);

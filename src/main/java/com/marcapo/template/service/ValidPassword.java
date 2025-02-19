@@ -5,9 +5,14 @@ import jakarta.validation.Payload;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.PARAMETER;
 
 @Documented
 @Constraint(validatedBy = PasswordValidator.class)
+@Target({ FIELD, PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidPassword {
     String message() default "Password must be at least 6 characters long and contain at least one uppercase letter," +
@@ -18,5 +23,4 @@ public @interface ValidPassword {
     Class<?>[] groups() default {};
 
     Class<? extends Payload>[] payload() default {};
-
 }

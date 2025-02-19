@@ -3,21 +3,26 @@ package com.marcapo.template.service;
 import com.marcapo.template.documents.User;
 import com.marcapo.template.dto.RegisterUserRequest;
 import com.marcapo.template.dto.UserUpdateRequest;
+import com.marcapo.template.exceptions.*;
 import com.marcapo.template.repository.UserRepository;
+import jakarta.validation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 
 
 @Service
+@Validated
 public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private static final String PASSWORD_PATTERN =
             "^(?!.*[\\s%$§°^;`\"#€~<>|])(?!.*Bendoe)(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@!%*?&])[A-Za-z\\d@!%*?&]{6,}$";
+    private static final String EMAIL_PATTERN = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$";
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -26,7 +31,7 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public User registerUser(RegisterUserRequest request) throws InvalidPasswordException {
+    public User registerUser(RegisterUserRequest request) throws InvalidPasswordException, EmailORUsernameCanNotBeEmptyException, UserNotFoundException {
         validateUserDoesNotExist(request.getUsername(), request.getEmail());
         validatePassword(request.getPassword(), request.getFirstName());
 
@@ -36,33 +41,47 @@ public class UserService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setBirthDate(request.getBirthDate());
+        user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
 
         return userRepository.save(user);
     }
 
-    public User editUser(String id, UserUpdateRequest request) throws UserNotFoundException, InvalidPasswordException {
+    public User editUser(String id, @Valid UserUpdateRequest request) throws UserNotFoundException, InvalidPasswordException, InvalidEmailFormatException {
         User existingUser = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
-
-            // ✅ Corrected the password validation condition
-            if (!request.getNewPassword().trim().matches(PASSWORD_PATTERN)) {
-                throw new InvalidPasswordException("Password does not meet security requirements.");
-            }
-
-            existingUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        }
+        isValidPassword(request, existingUser);
+        isValidEmail(request, existingUser);
 
         if (request.getUsername() != null) existingUser.setUsername(request.getUsername());
-        if (request.getEmail() != null) existingUser.setEmail(request.getEmail());
         if (request.getFirstName() != null) existingUser.setFirstName(request.getFirstName());
         if (request.getLastName() != null) existingUser.setLastName(request.getLastName());
         if (request.getBirthDate() != null) existingUser.setBirthDate(request.getBirthDate());
 
+
         return userRepository.save(existingUser);
     }
 
-    private void validateUserDoesNotExist(String username, String email) {
+    private void isValidEmail(UserUpdateRequest request, User existingUser) throws InvalidEmailFormatException {
+        if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+            if (!request.getEmail().matches(EMAIL_PATTERN)) {
+                throw new InvalidEmailFormatException("Invalid E-Mail format. Valid Format Example: janedoe@example.com");
+            }
+            existingUser.setEmail(request.getEmail());
+        }
+    }
+
+    private void isValidPassword(UserUpdateRequest request, User existingUser) throws InvalidPasswordException {
+        if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
+            if (!request.getNewPassword().trim().matches(PASSWORD_PATTERN)) {
+                throw new InvalidPasswordException("Password does not meet security requirements.");
+            }
+            existingUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        }
+    }
+
+    private void validateUserDoesNotExist(String username, String email) throws UserNotFoundException, EmailORUsernameCanNotBeEmptyException {
+        validateEmailAndUsername(username, email);
+
         userRepository.findByUsername(username)
                 .ifPresent(u -> {
                     throw new UserAlreadyExistsException("Username already exists, hence not available");
@@ -70,8 +89,17 @@ public class UserService {
 
         userRepository.findByEmail(email)
                 .ifPresent(u -> {
-                    throw new UserAlreadyExistsException("Email already exists, hence not available");
+                    throw new UserAlreadyExistsException("Email already exists, hence not available!");
                 });
+    }
+
+    private static void validateEmailAndUsername(String username, String email) throws EmailORUsernameCanNotBeEmptyException {
+        if (email == null || email.trim().isEmpty()) {
+            throw new EmailORUsernameCanNotBeEmptyException("Email can not be empty");
+        }
+        if (username == null || username.trim().isEmpty()) {
+            throw new EmailORUsernameCanNotBeEmptyException("Username can not be empty");
+        }
     }
 
     private void validatePassword(String password, String firstName) throws InvalidPasswordException {
