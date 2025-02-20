@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalUserExceptionHandler {
     @ExceptionHandler(InvalidPasswordException.class)
     public ResponseEntity<Map<String, String>> handleInvalidPasswordException(InvalidPasswordException e) {
         Map<String, String> error = new HashMap<>();
@@ -46,6 +46,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(EmailORUsernameCanNotBeEmptyException.class)
     public ResponseEntity<Map<String, String>> handleEmailCanNotBeEmptyException(EmailORUsernameCanNotBeEmptyException e) {
+        Map<String, String> errors = new HashMap<>();
+        errors.put("message", e.getMessage());
+        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(PriceCanNotBeLessThanZero.class)
+    public ResponseEntity<Map<String, String>> handlePriceCanNotBeLessThanZeroException(PriceCanNotBeLessThanZero e) {
         Map<String, String> errors = new HashMap<>();
         errors.put("message", e.getMessage());
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);

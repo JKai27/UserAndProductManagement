@@ -17,9 +17,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors().and()
-                .csrf(csrf -> csrf.ignoringAntMatchers("/users/**", "/auth/login", "/auth/logout"))
+                .csrf(csrf -> csrf.ignoringAntMatchers("/users/**", "/auth/login", "/auth/logout", "/products/**"))
                 .authorizeHttpRequests(auth -> auth
-                        .antMatchers("/users/**").permitAll()
+                        .antMatchers("/users/**", "/products/**").permitAll()
                         .antMatchers("/auth/login").permitAll()
                         .anyRequest().authenticated() //any other request than "/users" must be authenticated
 

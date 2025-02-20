@@ -1,6 +1,5 @@
 package com.marcapo.template.documents;
 
-import com.marcapo.template.service.ValidPassword;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,7 +14,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Setter
 public class User {
     @Id
-    private String id;
+    private String userId;
     private String firstName;
     private String lastName;
     @Indexed(unique = true)
